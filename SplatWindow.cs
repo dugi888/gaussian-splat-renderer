@@ -112,6 +112,13 @@ public class SplatWindow : GameWindow
             GL.Viewport(0, 0, e.Width, e.Height);
         }
 
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            base.OnMouseWheel(e);
+            _camera.FieldOfView -= e.OffsetY * 0.1f;
+            _camera.FieldOfView = Math.Clamp(_camera.FieldOfView, 0.1f, MathHelper.PiOver2);
+        }
+        
         private List<Splat> LoadSplatsFromFile(string path)
         {
             var splats = new List<Splat>();

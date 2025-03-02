@@ -4,7 +4,7 @@ namespace GaussianSplatRenderer;
 
 public class Camera
 {
-    public Vector3 Position { get; set; } = new Vector3(0, 0, 10);
+    public Vector3 Position { get; set; } = new Vector3(0, 0, 5);
     public Vector3 Target { get; set; } = Vector3.Zero;
     public float Azimuth { get; set; } = 0.0f;
     public float Elevation { get; set; } = 0.0f;
