@@ -1,0 +1,53 @@
+# Ignore Visual Studio temporary files, build results, and
+# JetBrains Rider project files
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User-specific files (Mono Auto Generated)
+mono_crash.*
+
+# User-specific files (JetBrains Rider)
+.idea/
+*.sln.iml
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio Code workspace settings
+.vscode/
+
+# Rider settings
+.idea/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# StyleCop
+StyleCopReport.xml
+
+# NuGet Packages
+packages/
+
+# Publish output
+publish/
+
+# Local configuration files
+*.config
+*.local
