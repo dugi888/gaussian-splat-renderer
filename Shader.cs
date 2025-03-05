@@ -5,37 +5,67 @@ namespace GaussianSplatRenderer;
 
 public class Shader
 {
-    private int _handle;
+    public int Handle { get; private set; }
 
     public Shader(string vertexPath, string fragmentPath)
     {
-        var vertexShader = GL.CreateShader(ShaderType.VertexShader);
-        GL.ShaderSource(vertexShader, File.ReadAllText(vertexPath));
+        string vertexShaderSource = File.ReadAllText(vertexPath);
+        string fragmentShaderSource = File.ReadAllText(fragmentPath);
+
+        int vertexShader = GL.CreateShader(ShaderType.VertexShader);
+        GL.ShaderSource(vertexShader, vertexShaderSource);
         GL.CompileShader(vertexShader);
+        CheckShaderCompileErrors(vertexShader);
 
-        var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fragmentShader, File.ReadAllText(fragmentPath));
+        int fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+        GL.ShaderSource(fragmentShader, fragmentShaderSource);
         GL.CompileShader(fragmentShader);
+        CheckShaderCompileErrors(fragmentShader);
 
-        _handle = GL.CreateProgram();
-        GL.AttachShader(_handle, vertexShader);
-        GL.AttachShader(_handle, fragmentShader);
-        GL.LinkProgram(_handle);
+        Handle = GL.CreateProgram();
+        GL.AttachShader(Handle, vertexShader);
+        GL.AttachShader(Handle, fragmentShader);
+        GL.LinkProgram(Handle);
+        CheckProgramLinkErrors(Handle);
 
-        GL.DetachShader(_handle, vertexShader);
-        GL.DetachShader(_handle, fragmentShader);
         GL.DeleteShader(vertexShader);
         GL.DeleteShader(fragmentShader);
     }
 
+    private void CheckShaderCompileErrors(int shader)
+    {
+        GL.GetShader(shader, ShaderParameter.CompileStatus, out int success);
+        if (success == 0)
+        {
+            string infoLog = GL.GetShaderInfoLog(shader);
+            throw new Exception($"Shader compilation error: {infoLog}");
+        }
+    }
+
+    private void CheckProgramLinkErrors(int program)
+    {
+        GL.GetProgram(program, GetProgramParameterName.LinkStatus, out int success);
+        if (success == 0)
+        {
+            string infoLog = GL.GetProgramInfoLog(program);
+            throw new Exception($"Program linking error: {infoLog}");
+        }
+    }
+
     public void Use()
     {
-        GL.UseProgram(_handle);
+        GL.UseProgram(Handle);
     }
 
     public void SetMatrix4(string name, Matrix4 matrix)
     {
-        int location = GL.GetUniformLocation(_handle, name);
+        int location = GL.GetUniformLocation(Handle, name);
         GL.UniformMatrix4(location, false, ref matrix);
+    }
+
+    public void SetFloat(string name, float value)
+    {
+        int location = GL.GetUniformLocation(Handle, name);
+        GL.Uniform1(location, value);
     }
 }
