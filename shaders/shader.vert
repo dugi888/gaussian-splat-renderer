@@ -17,6 +17,7 @@ void main()
     float z = clipPos.w;
 
     
+    // TODO: Is it better to calculate here or in the OnMouseWheel function?
     float scale = scalingParameter / z;
     gl_PointSize = 2.0 * scale; // 2s/z
     

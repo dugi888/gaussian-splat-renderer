@@ -33,6 +33,7 @@ public class SplatWindow : GameWindow
     {
         base.OnLoad();
         InitializeOpenGl();
+        SortSplatsByZ(); // Sort splats after loading
     }
 
     private void InitializeOpenGl()
@@ -76,21 +77,29 @@ public class SplatWindow : GameWindow
         return data.ToArray();
     }
 
+    
+
     protected override void OnRenderFrame(FrameEventArgs args)
     {
         base.OnRenderFrame(args);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
+        SortSplatsByZ(); // Sort splats before rendering
+
         _shader.Use();
         _shader.SetMatrix4("viewProjection", _camera.GetViewProjectionMatrix(ClientSize.X / (float)ClientSize.Y));
-    
-        Console.WriteLine("SCALING (OnRenderFrame): " + _scalingParameter);
-    
-        _shader.SetFloat("scalingParameter", _scalingParameter); 
+
+        // Console.WriteLine("SCALING (OnRenderFrame): " + _scalingParameter);
+
+        _shader.SetFloat("scalingParameter", _scalingParameter);
         GL.BindVertexArray(_vertexArrayObject);
         GL.DrawArrays(PrimitiveType.Points, 0, _splats.Count);
 
         SwapBuffers();
+    }
+    private void SortSplatsByZ()
+    {
+        _splats.Sort((splat1, splat2) => splat1.Position.Z.CompareTo(splat2.Position.Z));
     }
 
     protected override void OnUpdateFrame(FrameEventArgs args)
@@ -121,9 +130,9 @@ public class SplatWindow : GameWindow
     {
         base.OnMouseWheel(e);
         _camera.FieldOfView -= e.OffsetY * .1f;
-        _camera.FieldOfView = Math.Clamp(_camera.FieldOfView, 0.01f, MathHelper.Pi); 
-         
-        
+        _camera.FieldOfView = Math.Clamp(_camera.FieldOfView, 0.1f, 1f); // MathHelper.Pi, TODO: In case of infinite zoom-in it always enlarges but FOV have limit of 0.1f
+         // Console.WriteLine(_camera.FieldOfView);
+        // TODO: What does mean:  Update the program to render the splats as ----view-aligned---- squares with side length 2s/z pixels. From task 2?         
         _scalingParameter += e.OffsetY * 1.1f; // TODO: Set good parameter
         
         _scalingParameter = Math.Max(_scalingParameter, 1.0f); // Prevent vanishing 
