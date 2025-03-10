@@ -38,7 +38,7 @@ public class SplatWindow : GameWindow
 
     private void InitializeOpenGl()
     {
-        GL.ClearColor(1.0f, 1.0f, 1.0f, 1.0f); //  background white
+        GL.ClearColor(1.0f, 1.0f, 1.0f, 1.0f); // background white
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.ProgramPointSize); 
 
@@ -48,8 +48,14 @@ public class SplatWindow : GameWindow
         // Upload splat data to GPU
         _vertexBufferObject = GL.GenBuffer();
         GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject);
-        float[] splatData = GetSplatData();
-        GL.BufferData(BufferTarget.ArrayBuffer, splatData.Length * sizeof(float), splatData, BufferUsageHint.StaticDraw);
+        GL.BufferData(BufferTarget.ArrayBuffer, _splats.Count * 32, IntPtr.Zero, BufferUsageHint.StaticDraw);
+
+        for (int i = 0; i < _splats.Count; i++)
+        {
+            var splat = _splats[i];
+            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(i * 32), 12, new float[] { splat.Position.X, splat.Position.Y, splat.Position.Z });
+            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(i * 32 + 12), 16, new float[] { splat.Color.R / 255f, splat.Color.G / 255f, splat.Color.B / 255f, splat.Color.A / 255f });
+        }
 
         // Define vertex attributes
         _vertexArrayObject = GL.GenVertexArray();
@@ -58,23 +64,6 @@ public class SplatWindow : GameWindow
         GL.EnableVertexAttribArray(0);
         GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, 32, 24); // Color
         GL.EnableVertexAttribArray(1);
-    }
-
-    private float[] GetSplatData()
-    {
-        var data = new List<float>();
-        foreach (var splat in _splats)
-        {
-            data.Add(splat.Position.X);
-            data.Add(splat.Position.Y);
-            data.Add(splat.Position.Z);
-            // Convert byte to float
-            data.Add(splat.Color.R / 255f); 
-            data.Add(splat.Color.G / 255f); 
-            data.Add(splat.Color.B / 255f); 
-            data.Add(splat.Color.A / 255f); 
-        }
-        return data.ToArray();
     }
 
     
@@ -176,3 +165,6 @@ public class SplatWindow : GameWindow
         return splats;
     }
 }
+
+// Change camera not field of view..
+// Play with data array..
