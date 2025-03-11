@@ -1,18 +1,22 @@
 #version 450 core
 
 in vec4 fragColor;
+in vec2 texCoord;
 out vec4 outputColor;
 
 void main()
 {
-    vec3 RGBd = vec3(1.0, 1.0, 1.0); // Initial destination color
-    float Ad = 1.0; // Initial destination alpha
+    // Calculate normalized distance from center of point sprite
+    vec2 coord = 2.0 * gl_PointCoord - 1.0;
+    float r2 = dot(coord, coord);
 
-    vec3 RGBs = fragColor.rgb * fragColor.a; // Source color with premultiplied alpha
-    float As = fragColor.a; // Source alpha
+    // Discard fragments outside the circle
+    if (r2 > 1.0) discard;
 
-    // Back-to-front compositing (formula from pdf file given)
-    RGBd = (1.0 - As) * RGBd + As * RGBs;
+    // Gaussian function
+    float sigma = 10.0; // Controls the spread of the Gaussian
+    float gaussian = exp(-r2 / (2.0 * sigma * sigma));
 
-    outputColor = vec4(RGBd, Ad);
+    // Apply Gaussian falloff directly to color with alpha
+    outputColor = vec4(fragColor.rgb, fragColor.a * gaussian);
 }

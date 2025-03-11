@@ -33,7 +33,7 @@ public class SplatWindow : GameWindow
         })
     {
         _camera = new Camera();
-        _splats = LoadSplatsFromFile("../../../data/nike.splat");
+        _splats = LoadSplatsFromFile("../../../data/train.splat");
         CenterObject(_splats); // Center the object
     }
 
@@ -63,9 +63,12 @@ public class SplatWindow : GameWindow
 
     private void InitializeOpenGl()
     {
-        GL.ClearColor(1.0f, 1.0f, 1.0f, 1.0f); // background white
+        GL.ClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         GL.Enable(EnableCap.DepthTest);
-        GL.Enable(EnableCap.ProgramPointSize); 
+        GL.Enable(EnableCap.ProgramPointSize);
+        GL.Enable(EnableCap.PointSprite); // Enable point sprites
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
         _shader = new Shader("../../../shaders/shader.vert", "../../../shaders/shader.frag");
 

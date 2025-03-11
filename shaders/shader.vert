@@ -1,28 +1,20 @@
 #version 450 core
 
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec4 color;
-
-out vec4 fragColor;
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec4 aColor;
 
 uniform mat4 viewProjection;
-uniform float scalingParameter; 
+uniform float scalingParameter;
+
+out vec4 fragColor;
+out vec2 texCoord;
 
 void main()
 {
-    // Transform the position to clip space
-    vec4 clipPos = viewProjection * vec4(position, 1.0);
+    gl_Position = viewProjection * vec4(aPosition, 1.0);
+    gl_PointSize = scalingParameter * 20.0 / gl_Position.w;
+    fragColor = aColor;
 
-    // depth in view space
-    float z = clipPos.w;
-
-    
-    // TODO: Is it better to calculate here or in the OnMouseWheel function?
-    float scale = scalingParameter / z;
-    gl_PointSize = 2.0 * scale; // 2s/z
-    
-    fragColor = color;
-
-    // final position
-    gl_Position = clipPos;
+    // Calculate texture coordinates for point sprite
+    texCoord = vec2(-1.0, -1.0);
 }
