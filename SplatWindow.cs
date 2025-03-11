@@ -27,13 +27,30 @@ public class SplatWindow : GameWindow
     {
         _camera = new Camera();
         _splats = LoadSplatsFromFile("../../../data/nike.splat");
+        CenterObject(_splats); // Center the object
     }
 
     protected override void OnLoad()
     {
         base.OnLoad();
         InitializeOpenGl();
-        SortSplatsByZ(); // Sort splats after loading
+        //SortSplatsByZ(); // Sort splats after loading
+    }
+    private void CenterObject(List<Splat> splats) // Centering the object
+    {
+        // Calculate the centroid of the object
+        Vector3 centroid = Vector3.Zero;
+        foreach (var splat in splats)
+        {
+            centroid += splat.Position;
+        }
+        centroid /= splats.Count;
+
+        // Translate each vertex to center the object
+        for (int i = 0; i < splats.Count; i++)
+        {
+            splats[i].Position -= centroid;
+        }
     }
 
     private void InitializeOpenGl()
@@ -73,7 +90,7 @@ public class SplatWindow : GameWindow
         base.OnRenderFrame(args);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        SortSplatsByZ(); // Sort splats before rendering
+       // SortSplatsByZ(); // Sort splats before rendering
 
         _shader.Use();
         _shader.SetMatrix4("viewProjection", _camera.GetViewProjectionMatrix(ClientSize.X / (float)ClientSize.Y));
@@ -106,6 +123,12 @@ public class SplatWindow : GameWindow
         }
         _lastMouseX = mouseState.X;
         _lastMouseY = mouseState.Y;
+        
+        Console.WriteLine(_camera.Radius);
+        _scalingParameter = 10.0f / _camera.Radius; // Random scaling factor
+
+        //Console.WriteLine($"Camera Position: {_camera.Position.X}, {_camera.Position.Y}, {_camera.Position.Z}");
+
     }
     
 
@@ -118,13 +141,12 @@ public class SplatWindow : GameWindow
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
         base.OnMouseWheel(e);
-        _camera.FieldOfView -= e.OffsetY * .1f;
-        _camera.FieldOfView = Math.Clamp(_camera.FieldOfView, 0.1f, 1f); // MathHelper.Pi, TODO: In case of infinite zoom-in it always enlarges but FOV have limit of 0.1f
-         // Console.WriteLine(_camera.FieldOfView);
-        // TODO: What does mean:  Update the program to render the splats as ----view-aligned---- squares with side length 2s/z pixels. From task 2?         
-        _scalingParameter += e.OffsetY * 1.1f; // TODO: Set good parameter
         
-        _scalingParameter = Math.Max(_scalingParameter, 1.0f); // Prevent vanishing 
+        _camera.Radius -= e.OffsetY * 0.5f; // Zoom level
+        _camera.Radius = Math.Clamp(_camera.Radius, 0.1f, 100.0f); // Randomly selected values for min and max
+
+        // Update the camera position based on the new radius
+        _camera.UpdateViewMatrix();
     }
 
     private List<Splat> LoadSplatsFromFile(string path)
@@ -165,6 +187,3 @@ public class SplatWindow : GameWindow
         return splats;
     }
 }
-
-// Change camera not field of view..
-// Play with data array..
