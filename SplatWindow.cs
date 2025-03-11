@@ -16,6 +16,13 @@ public class SplatWindow : GameWindow
     private float _lastMouseX;
     private float _lastMouseY;
     private float _scalingParameter = 1.0f; 
+    private Matrix4 _cachedViewProjection;
+
+    
+    // For FPS calculation
+    private int _frameCount;
+    private double _elapsedTime;
+    private int _fps;
 
     public SplatWindow() : base(
         GameWindowSettings.Default,
@@ -34,7 +41,8 @@ public class SplatWindow : GameWindow
     {
         base.OnLoad();
         InitializeOpenGl();
-        //SortSplatsByZ(); // Sort splats after loading
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
     private void CenterObject(List<Splat> splats) // Centering the object
     {
@@ -59,7 +67,6 @@ public class SplatWindow : GameWindow
         GL.Enable(EnableCap.DepthTest);
         GL.Enable(EnableCap.ProgramPointSize); 
 
-        // Compile shaders
         _shader = new Shader("../../../shaders/shader.vert", "../../../shaders/shader.frag");
 
         // Upload splat data to GPU
@@ -70,16 +77,24 @@ public class SplatWindow : GameWindow
         for (int i = 0; i < _splats.Count; i++)
         {
             var splat = _splats[i];
-            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(i * 32), 12, new float[] { splat.Position.X, splat.Position.Y, splat.Position.Z });
-            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(i * 32 + 12), 16, new float[] { splat.Color.R / 255f, splat.Color.G / 255f, splat.Color.B / 255f, splat.Color.A / 255f });
+            // Position data (12 bytes)
+            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(i * 32), 12, 
+                new float[] { splat.Position.X, splat.Position.Y, splat.Position.Z });
+        
+            // Color data (4 bytes) - original byte values
+            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)(i * 32 + 24), 4, 
+                new byte[] { splat.Color.R, splat.Color.G, splat.Color.B, splat.Color.A });
         }
 
-        // Define vertex attributes
         _vertexArrayObject = GL.GenVertexArray();
         GL.BindVertexArray(_vertexArrayObject);
-        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 32, 0); // Position
+    
+        // Position attribute
+        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 32, 0);
         GL.EnableVertexAttribArray(0);
-        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, 32, 24); // Color
+    
+        // Color attribute - normalized bytes
+        GL.VertexAttribPointer(1, 4, VertexAttribPointerType.UnsignedByte, true, 32, 24);
         GL.EnableVertexAttribArray(1);
     }
 
@@ -88,25 +103,61 @@ public class SplatWindow : GameWindow
     protected override void OnRenderFrame(FrameEventArgs args)
     {
         base.OnRenderFrame(args);
+    
+        // FPS calculation
+        _frameCount++;
+        _elapsedTime += args.Time;
+        if (_elapsedTime >= 1.0) // Update FPS every second
+        {
+            _fps = _frameCount;
+            _frameCount = 0;
+            _elapsedTime = 0;
+            Console.WriteLine($"FPS: {_fps}");
+        }
+
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-       // SortSplatsByZ(); // Sort splats before rendering
+        // Sort splats by screen-space depth
+        SortSplatsByDepth();
 
         _shader.Use();
         _shader.SetMatrix4("viewProjection", _camera.GetViewProjectionMatrix(ClientSize.X / (float)ClientSize.Y));
-
-        // Console.WriteLine("SCALING (OnRenderFrame): " + _scalingParameter);
-
         _shader.SetFloat("scalingParameter", _scalingParameter);
         GL.BindVertexArray(_vertexArrayObject);
         GL.DrawArrays(PrimitiveType.Points, 0, _splats.Count);
 
         SwapBuffers();
     }
-    private void SortSplatsByZ()
+
+
+private void SortSplatsByDepth()
+{
+    if (_cachedViewProjection != _camera.GetViewProjectionMatrix(ClientSize.X / (float)ClientSize.Y))
     {
-        _splats.Sort((splat1, splat2) => splat1.Position.Z.CompareTo(splat2.Position.Z));
+        _cachedViewProjection = _camera.GetViewProjectionMatrix(ClientSize.X / (float)ClientSize.Y);
     }
+
+    // Use the cached view-projection matrix
+    Matrix4 viewProjection = _cachedViewProjection;
+
+    // Rest of the code remains the same
+    var depthArray = new (int Index, float Depth)[_splats.Count];
+
+    Parallel.For(0, _splats.Count, i =>
+    {
+        Vector4 pos = viewProjection * new Vector4(_splats[i].Position, 1.0f);
+        depthArray[i] = (i, pos.Z);
+    });
+
+    Array.Sort(depthArray, (a, b) => b.Depth.CompareTo(a.Depth));
+
+    var tempList = _splats.ToList();
+    for (int i = 0; i < depthArray.Length; i++)
+    {
+        _splats[i] = tempList[depthArray[i].Index];
+    }
+}
+    
 
     protected override void OnUpdateFrame(FrameEventArgs args)
     {
@@ -124,8 +175,8 @@ public class SplatWindow : GameWindow
         _lastMouseX = mouseState.X;
         _lastMouseY = mouseState.Y;
         
-        Console.WriteLine(_camera.Radius);
-        _scalingParameter = 10.0f / _camera.Radius; // Random scaling factor
+       // Console.WriteLine(_camera.Radius);
+        _scalingParameter = 20.0f / _camera.Radius; // Random scaling factor
 
         //Console.WriteLine($"Camera Position: {_camera.Position.X}, {_camera.Position.Y}, {_camera.Position.Z}");
 
@@ -168,7 +219,7 @@ public class SplatWindow : GameWindow
                 BitConverter.ToSingle(data, i + 20)
             );
 
-            Color4 color = new Color4(
+            ColorByte color = new ColorByte(
                 data[i + 24],
                 data[i + 25],
                 data[i + 26],
