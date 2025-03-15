@@ -6,7 +6,6 @@ out vec4 outputColor;
 
 void main()
 {
-    // Calculate normalized distance from center of point sprite
     vec2 coord = 2.0 * gl_PointCoord - 1.0;
     float r2 = dot(coord, coord);
 
@@ -17,6 +16,6 @@ void main()
     float sigma = 10.0; // Controls the spread of the Gaussian
     float gaussian = exp(-r2 / (2.0 * sigma * sigma));
 
-    // Apply Gaussian falloff directly to color with alpha
+    // Apply Gaussian
     outputColor = vec4(fragColor.rgb, fragColor.a * gaussian);
 }

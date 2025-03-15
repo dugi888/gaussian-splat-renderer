@@ -33,7 +33,7 @@ public class SplatWindow : GameWindow
         })
     {
         _camera = new Camera();
-        _splats = LoadSplatsFromFile("../../../data/train.splat");
+        _splats = LoadSplatsFromFile("../../../data/plush.splat");
         CenterObject(_splats); // Center the object
     }
 
